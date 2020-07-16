@@ -52,9 +52,9 @@ namespace TESTprocessingBlock
 
             SetupWindow(out updateDepth,out updateColor, pp);
 
-            SetupFilters(out DecimationFilter decimate, out SpatialFilter spatial, out TemporalFilter temp, out HoleFillingFilter holeFill, out ThresholdFilter threshold);
+            SetupFilters(out DecimationFilter decimate, out SpatialFilter spatial, out ThresholdFilter threshold);
             // Setup frame processing
-            SetupProcessingBlock(pipeline, colorizer, decimate, spatial, temp, holeFill, threshold);
+            SetupProcessingBlock(pipeline, colorizer, decimate, spatial, threshold);
 
             // Start frame processing
             StartProcessingBlock(updateDepth, updateColor);
@@ -113,7 +113,7 @@ namespace TESTprocessingBlock
             });
         }
 
-        private void SetupFilters(out DecimationFilter decimate, out SpatialFilter spatial, out TemporalFilter temp, out HoleFillingFilter holeFill, out ThresholdFilter threshold)
+        private void SetupFilters(out DecimationFilter decimate, out SpatialFilter spatial, out ThresholdFilter threshold)
         {
             // Colorizer is used to visualize depth data
             colorizer = new Colorizer();
@@ -123,20 +123,12 @@ namespace TESTprocessingBlock
 
             // Define spatial filter (edge-preserving)
             spatial = new SpatialFilter();
-            // Enable hole-filling
-            // Hole filling is an agressive heuristic and it gets the depth wrong many times
-            // However, this demo is not built to handle holes
-            // (the shortest-path will always prefer to "cut" through the holes since they have zero 3D distance)
             spatial.Options[Option.HolesFill].Value = 1.0F; //change resolution on the edge of image
             spatial.Options[Option.FilterMagnitude].Value = 5.0F;
             spatial.Options[Option.FilterSmoothAlpha].Value = 1.0F;
             spatial.Options[Option.FilterSmoothDelta].Value = 50.0F;
 
-            // Define temporal filter
-            temp = new TemporalFilter();
 
-            // Define holefill filter
-            holeFill = new HoleFillingFilter();
 
             // Aline color to depth
 
@@ -148,7 +140,7 @@ namespace TESTprocessingBlock
             threshold.Options[Option.MaxDistance].Value = 1;
         }
 
-        private void SetupProcessingBlock(Pipeline pipeline, Colorizer colorizer, DecimationFilter decimate, SpatialFilter spatial, TemporalFilter temp, HoleFillingFilter holeFill, ThresholdFilter threshold)
+        private void SetupProcessingBlock(Pipeline pipeline, Colorizer colorizer, DecimationFilter decimate, SpatialFilter spatial, ThresholdFilter threshold)
         {
             // Setup / start frame processing
             processingBlock = new CustomProcessingBlock((f, src) =>
@@ -163,8 +155,6 @@ namespace TESTprocessingBlock
                         var processedFrames = frames
                         .ApplyFilter(decimate).DisposeWith(releaser)
                         .ApplyFilter(spatial).DisposeWith(releaser)
-                        .ApplyFilter(temp).DisposeWith(releaser)
-                        .ApplyFilter(holeFill).DisposeWith(releaser)
                         .ApplyFilter(colorizer).DisposeWith(releaser)
                         .ApplyFilter(threshold).DisposeWith(releaser);
 
